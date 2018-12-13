@@ -23,7 +23,7 @@ with open('data_test.pickle', 'rb') as f:
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--batch', type=int, default=256)
+parser.add_argument('--batch', type=int, default=128)
 parser.add_argument('--emb_dim', type=int, default=100)
 parser.add_argument('--epoch', type=int, default=30)
 parser.add_argument('--name', type=str, default='default')
