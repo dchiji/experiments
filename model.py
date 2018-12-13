@@ -62,7 +62,7 @@ class GRUBase(nn.Module):
         # question: (batch_size, length, emb_dim)-tensor
         batch_size = question.size()[0]
 
-        h_0 = torch.zeros([2, batch_size, self.hidden_dim])
+        h_0 = torch.zeros([2, batch_size, self.hidden_dim]).to(self.device)
         input = self.emb(question)
         _, h_final = self.gru(input, h_0)   # (2, batch_size, hidden_dim)
         h_final = h_final.transpose(0, 1)
