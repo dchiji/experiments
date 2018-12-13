@@ -19,8 +19,7 @@ class Classifier(nn.Module):
 
         self.cossim = nn.CosineSimilarity(dim=1)
         self.relu = nn.ReLU()
-        self.W1 = nn.Linear(emb_dim, int(emb_dim / 2))
-        self.W2 = nn.Linear(int(emb_dim / 2), 1)
+        self.W1 = nn.Linear(emb_dim, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, question):
@@ -29,9 +28,8 @@ class Classifier(nn.Module):
 
         h = self.emb(question)
         h = self.cossim(h, ones)
-        h = self.W1(h)
         h = self.relu(h)
-        h = self.W2(h)
+        h = self.W1(h)
         out = self.sigmoid(h)
         return out
 
