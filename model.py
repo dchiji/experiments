@@ -1,10 +1,9 @@
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 class Classifier(nn.Module):
-    def __init__(self, emb_dim, init_weight):
+    def __init__(self, emb_dim, init_weight, device):
         #
         # init_weight: (vocab_size, emb_dim)-tensor
         #
@@ -13,6 +12,7 @@ class Classifier(nn.Module):
         self.emb_dim = emb_dim
         self.vocab_size = init_weight.size()[0]
         self.padding_idx = self.vocab_size - 1
+        self.device = device
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_dim)
         self.emb.weight = nn.Parameter(init_weight)
@@ -26,7 +26,7 @@ class Classifier(nn.Module):
 
     def forward(self, question):
         # question: (batch_size, length, emb_dim)-tensor
-        ones = Variable(torch.ones([question.size()[0], question.size()[1], self.emb_dim]).float())
+        ones = torch.ones([question.size()[0], question.size()[1], self.emb_dim]).float().to(self.device)
 
         h = self.emb(question)
         h = self.cossim(h, ones)

@@ -183,7 +183,7 @@ if __name__ == '__main__':
     if DEBUG_FLAG:
         embed()
     if not os.path.exists(MODEL_PATH) or TRAIN_FLAG:
-        model = Classifier(EMB_DIM, init_weight)
+        model = Classifier(EMB_DIM, init_weight, DEVICE)
         model.to(DEVICE)
         start_train(model)
         torch.save(model, MODEL_PATH)
