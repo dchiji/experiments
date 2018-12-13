@@ -51,22 +51,30 @@ class GRUBase(nn.Module):
         self.emb = nn.Embedding(self.vocab_size, self.emb_dim)
         self.emb.weight = nn.Parameter(init_weight)
 
-        self.hidden_dim = 500
+        self.hidden_dim = 32
 
-        self.gru = nn.GRU(emb_dim, self.hidden_dim, 1, batch_first=True, bidirectional=True)
-        self.W1 = nn.Linear(self.hidden_dim * 2, 1)
+        self.dropout = nn.Dropout(p=0.2)
+        self.gru = nn.GRU(emb_dim, self.hidden_dim, 2, batch_first=True, bidirectional=True)
+        self.M = nn.Linear(self.hidden_dim * 4, 1)
+
+        self.W1 = nn.Linear(self.hidden_dim * 4, 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, question):
-        # question: (batch_size, length, emb_dim)-tensor
+        # question: (batch_size, seq_len, emb_dim)-tensor
         batch_size = question.size()[0]
+        seq_len = question.size()[1]
 
-        h_0 = torch.zeros([2, batch_size, self.hidden_dim]).to(self.device)
         input = self.emb(question)
-        _, h_final = self.gru(input, h_0)   # (2, batch_size, hidden_dim)
-        h_final = h_final.transpose(0, 1)
-        out = h_final.contiguous().view([batch_size, -1])
+        input = self.dropout(input)
+
+        h_0 = torch.zeros([4, batch_size, self.hidden_dim]).to(self.device)
+        out, _ = self.gru(input, h_0)   # (batch_size, seq_len, 4 * hidden_dim)
+        out = out.contiguous().view([batch_size, seq_len, 4 * self.hidden_dim]
+        weight = self.M(out)    # (batch_size * seq_len, 1)
+        weight = weight.view([batch_size, seq_len])
+        out = torch.einsum('bij,bi->bj', out, weight)
 
         out = self.relu(out)
         out = self.W1(out)
