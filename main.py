@@ -30,6 +30,7 @@ parser.add_argument('--name', type=str, default='default')
 parser.add_argument('--train', type=bool, default=False)
 parser.add_argument('--debug', type=bool, default=False)
 parser.add_argument('--model', type=str, default='classifier')
+parser.add_argument('--save_disc_capacity', type=bool, default=False)
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -42,6 +43,7 @@ MODEL_PATH = 'pth_' + opts.name
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 TRAIN_FLAG = opts.train
 DEBUG_FLAG = opts.debug
+SAVE_DISC_CAPACITY_FLAG = opts.save_disc_capacity
 
 
 if not os.path.exists(EMB_PKL):
@@ -59,9 +61,10 @@ if not os.path.exists(EMB_PKL):
     word2idx['<padding>'] = len(idx2tensor) - 1
     init_weight = torch.cat(idx2tensor, dim=0)
 
-    with open(EMB_PKL, 'wb') as f:
-        dic = {'idx2word': idx2word, 'word2idx': word2idx, 'init_weight': init_weight}
-        pickle.dump(dic, f)
+    if not SAVE_DISC_CAPACITY_FLAG:
+        with open(EMB_PKL, 'wb') as f:
+            dic = {'idx2word': idx2word, 'word2idx': word2idx, 'init_weight': init_weight}
+            pickle.dump(dic, f)
 else:
     print('Load ' + EMB_PKL + ' ...')
     with open(EMB_PKL, 'rb') as f:
