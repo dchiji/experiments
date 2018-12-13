@@ -27,10 +27,10 @@ parser.add_argument('--batch', type=int, default=128)
 parser.add_argument('--emb_dim', type=int, default=100)
 parser.add_argument('--epoch', type=int, default=30)
 parser.add_argument('--name', type=str, default='default')
-parser.add_argument('--train', type=bool, default=False)
-parser.add_argument('--debug', type=bool, default=False)
 parser.add_argument('--model', type=str, default='classifier')
 parser.add_argument('--save_disc_capacity', type=bool, default=False)
+parser.add_argument('--forced-train', type=bool, default=False)
+parser.add_argument('--debug', type=bool, default=False)
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -41,7 +41,7 @@ EMB_PKL = 'embedding_' + str(EMB_DIM) + '.pickle'
 MODEL_TYPE = opts.model
 MODEL_PATH = 'pth_' + opts.name
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-TRAIN_FLAG = opts.train
+FORCED_TRAIN_FLAG = opts.forced_train
 DEBUG_FLAG = opts.debug
 SAVE_DISC_CAPACITY_FLAG = opts.save_disc_capacity
 
@@ -187,7 +187,7 @@ def start_train(model):
 if __name__ == '__main__':
     if DEBUG_FLAG:
         embed()
-    if not os.path.exists(MODEL_PATH) or TRAIN_FLAG:
+    if not os.path.exists(MODEL_PATH) or FORCED_TRAIN_FLAG:
         if MODEL_TYPE == 'classifier':
             model = Classifier(EMB_DIM, init_weight, DEVICE)
         if MODEL_TYPE == 'gru':
