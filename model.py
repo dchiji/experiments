@@ -55,9 +55,9 @@ class GRUBase(nn.Module):
 
         self.dropout = nn.Dropout(p=0.2)
         self.gru = nn.GRU(emb_dim, self.hidden_dim, 2, batch_first=True, bidirectional=True)
-        self.M = nn.Linear(self.hidden_dim * 4, 1)
+        self.M = nn.Linear(self.hidden_dim * 2, 1)
 
-        self.W1 = nn.Linear(self.hidden_dim * 4, 1)
+        self.W1 = nn.Linear(self.hidden_dim * 2, 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -70,8 +70,8 @@ class GRUBase(nn.Module):
         input = self.dropout(input)
 
         h_0 = torch.zeros([4, batch_size, self.hidden_dim]).to(self.device)
-        out, _ = self.gru(input, h_0)   # (batch_size, seq_len, 4 * hidden_dim)
-        out = out.contiguous().view([batch_size, seq_len, 4 * self.hidden_dim]
+        out, _ = self.gru(input, h_0)   # (batch_size, seq_len, 2 * hidden_dim)
+        out = out.contiguous().view([batch_size, seq_len, 2 * self.hidden_dim])
         weight = self.M(out)    # (batch_size * seq_len, 1)
         weight = weight.view([batch_size, seq_len])
         out = torch.einsum('bij,bi->bj', out, weight)
