@@ -190,7 +190,7 @@ if __name__ == '__main__':
     if not os.path.exists(MODEL_PATH) or FORCED_TRAIN_FLAG:
         if MODEL_TYPE == 'classifier':
             model = Classifier(EMB_DIM, init_weight, DEVICE)
-        if MODEL_TYPE == 'gru':
+        elif MODEL_TYPE == 'gru':
             model = GRUBase(EMB_DIM, init_weight, DEVICE)
         else:
             raise Exception
