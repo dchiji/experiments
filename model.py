@@ -60,7 +60,7 @@ class GRUBase(nn.Module):
         self.W1 = nn.Linear(self.hidden_dim * 2, 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, question):
         # question: (batch_size, seq_len, emb_dim)-tensor
@@ -75,7 +75,7 @@ class GRUBase(nn.Module):
         out = out.contiguous().view([batch_size, seq_len, 2 * self.hidden_dim])
         weight = self.M(out)    # (batch_size * seq_len, 1)
         weight = weight.view([batch_size, seq_len])
-        weight = self.softmax(weight, dim=1)
+        weight = self.softmax(weight)
         out = torch.einsum('bij,bi->bj', out, weight)
         out = self.W1(out)
         out = self.sigmoid(out)
