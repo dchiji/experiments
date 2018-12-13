@@ -184,14 +184,14 @@ def start_train(model):
         data_sub = {}
         data_sub['positive'] = data['positive'][0:int(len(data['positive'])*0.1)]
         data_sub['negative'] = data['negative'][0:int(len(data['positive'])*0.1)]
-        data_sub['positive-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
+        data_sub['positive-all-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
         data_sub['negative-seq'] = data['negative-seq'][0:int(len(data['positive'])*0.1)]
         acc, _ = one_epoch_eval(model, data_sub)
-        print(str(acc / (len(data_sub['positive'] * 2))))
+        print(str(acc / (len(data_sub['positive-all-seq'] * 2))))
 
         print('Test Accuracy: ', end='')
         acc, _ = one_epoch_eval(model, data_test)
-        print(str(acc / (len(data_test['positive'] * 2))))
+        print(str(acc / (len(data_test['positive-all-seq']) + len(data_test['negative-seq']))))
 
 if __name__ == '__main__':
     if DEBUG_FLAG:
