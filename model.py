@@ -51,7 +51,7 @@ class GRUBase(nn.Module):
         self.emb = nn.Embedding(self.vocab_size, self.emb_dim)
         self.emb.weight = nn.Parameter(init_weight)
 
-        self.hidden_dim = int(emb_dim / 2)
+        self.hidden_dim = 256
 
         self.gru = nn.GRU(emb_dim, self.hidden_dim, 1, batch_first=True, bidirectional=True)
         self.W1 = nn.Linear(self.hidden_dim * 2, 1)
