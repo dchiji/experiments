@@ -75,38 +75,34 @@ else:
 init_weight = init_weight.to(DEVICE)
 
 
+def text_to_idx_seq(text):
+    seq = []
+    words = text.split(' ')
+    for word in words:
+        if word in word2idx:
+            seq.append(word2idx[word])
+        else:
+            seq.append(word2idx['<unknown>'])
+    return seq
+
+def padding(seq_lis):
+    max_len = max([len(seq) for seq in seq_lis])
+    seq_lis = [seq + [word2idx['<padding>']] * (max_len - len(seq)) for seq in seq_lis]
+    return seq_lis
+
 def split_into_batches(data):
-    one_epoch = int(len(data['positive']) / BATCH_SIZE)
+    one_epoch = int(len(data['positive-seq']) / BATCH_SIZE)
     pos_batch_size = int(BATCH_SIZE / 2)
     neg_batch_size = int(BATCH_SIZE / 2)
 
     batches = []
     for i in range(one_epoch):
-        pos_batch = []
-        for _, text in data['positive'][i * pos_batch_size:(i+1) * pos_batch_size]:
-            seq = []
-            words = text.split(' ')
-            for word in words:
-                if word in word2idx:
-                    seq.append(word2idx[word])
-                else:
-                    seq.append(word2idx['<unknown>'])
-            pos_batch.append(seq)
-        neg_batch = []
-        for _, text in data['negative'][i * neg_batch_size:(i+1) * neg_batch_size]:
-            seq = []
-            words = text.split(' ')
-            for word in words:
-                if word in word2idx:
-                    seq.append(word2idx[word])
-                else:
-                    seq.append(word2idx['<unknown>'])
-            neg_batch.append(seq)
+        pos_batch = data['positive-seq'][i * pos_batch_size:(i+1) * pos_batch_size]
+        neg_batch = data['negative-seq'][i * neg_batch_size:(i+1) * neg_batch_size]
 
-        # Padding
-        max_len = max([len(seq) for seq in pos_batch + neg_batch])
-        pos_batch = [seq + [word2idx['<padding>']] * (max_len - len(seq)) for seq in pos_batch]
-        neg_batch = [seq + [word2idx['<padding>']] * (max_len - len(seq)) for seq in neg_batch]
+        pos_neg_batch = padding(pos_batch + neg_batch)
+        pos_batch = pos_neg_batch[0:pos_batch_size]
+        neg_batch = pos_neg_batch[pos_batch_size:]
 
         batches.append([pos_batch, neg_batch])
     return batches
@@ -142,9 +138,7 @@ def one_epoch_train(model, data):
     return total_loss
 
 def one_batch_predict(model, batch):
-    max_len = max([len(text) for text in batch])
-    # Padding
-    batch = [idx_lis + [model.padding_idx] * (max_len - len(idx_lis)) for idx_lis in batch]
+    batch = padding(batch)
     batch = torch.LongTensor(batch).to(DEVICE)
     pred = model(batch) # (batch_size, 1)
     return [1 if pred[i][0].item() > 0.5 else 0 for i in range(len(batch))]
@@ -152,14 +146,20 @@ def one_batch_predict(model, batch):
 def one_epoch_eval(model, data):
     total_acc = 0
     all_pred = []
-    batches = split_into_batches(data)
+    batches = []
+    corrects = []
+    seq_lis = [(d, 1) for d in data['positive-all-seq']] + [(d, 0) for d in data['negative-seq']]
+    for i in range(int(len(seq_lis) / BATCH_SIZE)):
+        sublist = seq_lis[i * BATCH_SIZE: (i+1) * BATCH_SIZE]
+        bat = [p[0] for p in sublist]
+        cor = [p[1] for p in sublist]
+        batches.append(bat)
+        corrects.append(cor)
 
-    for bat in batches:
-        pred = one_batch_predict(model, bat[0] + bat[1])
+    for i in range(batches):
+        pred = one_batch_predict(model, batches[0])
         all_pred += pred
-
-        correct = ([1] * len(bat[0])) + ([0] * len(bat[1]))
-        total_acc += sum([1 if pred[i] == correct[i] else 0 for i in range(len(pred))])
+        total_acc += sum([1 if pred[j] == corrects[i][j] else 0 for j in range(len(pred))])
     return total_acc, all_pred
 
 def start_train(model):
@@ -167,6 +167,13 @@ def start_train(model):
 
     opt = optim.Adam(model.parameters(), lr=0.001)
     model.set_optimizer(opt)
+
+    data['positive-seq'] = [text_to_idx_seq(text) for _, text in data['positive']]
+    data['negative-seq'] = [text_to_idx_seq(text) for _, text in data['negative']]
+
+    data_test['positive-all-seq'] = [text_to_idx_seq(text) for _, text in data_test['positive-all']]
+    data_test['negative-seq'] = [text_to_idx_seq(text) for _, text in data_test['negative']]
+
     for epoch in range(EPOCH):
         print('[Epoch ' + str(epoch) + ']')
 
@@ -177,6 +184,8 @@ def start_train(model):
         data_sub = {}
         data_sub['positive'] = data['positive'][0:int(len(data['positive'])*0.1)]
         data_sub['negative'] = data['negative'][0:int(len(data['positive'])*0.1)]
+        data_sub['positive-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
+        data_sub['negative-seq'] = data['negative-seq'][0:int(len(data['positive'])*0.1)]
         acc, _ = one_epoch_eval(model, data_sub)
         print(str(acc / (len(data_sub['positive'] * 2))))
 
