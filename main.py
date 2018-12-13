@@ -67,6 +67,7 @@ else:
         idx2word = dic['idx2word']
         word2idx = dic['word2idx']
         init_weight = dic['init_weight']
+init_weight = init_weight.to(DEVICE)
 
 
 def split_into_batches(data):
@@ -112,12 +113,12 @@ def one_batch_train(model, pos_batch, neg_batch):
     pos_target = [[1.0]] * len(pos_batch)
     neg_target = [[0.0]] * len(neg_batch)
     target = pos_target + neg_target
-    target = torch.FloatTensor(target)
+    target = torch.FloatTensor(target).to(DEVICE)
 
     # Padding
     batch = pos_batch + neg_batch
     batch = [idx_lis + [model.padding_idx] * (max_len - len(idx_lis)) for idx_lis in batch]
-    batch = torch.LongTensor(batch)
+    batch = torch.LongTensor(batch).to(DEVICE)
 
     loss = nn.BCELoss()
     model.opt.zero_grad()
@@ -139,7 +140,7 @@ def one_batch_predict(model, batch):
     max_len = max([len(text) for text in batch])
     # Padding
     batch = [idx_lis + [model.padding_idx] * (max_len - len(idx_lis)) for idx_lis in batch]
-    batch = torch.LongTensor(batch)
+    batch = torch.LongTensor(batch).to(DEVICE)
     pred = model(batch) # (batch_size, 1)
     return [1 if pred[i][0].item() > 0.5 else 0 for i in range(len(batch))]
 
