@@ -29,6 +29,7 @@ parser.add_argument('--epoch', type=int, default=30)
 parser.add_argument('--name', type=str, default='default')
 parser.add_argument('--train', type=bool, default=False)
 parser.add_argument('--debug', type=bool, default=False)
+parser.add_argument('--model', type=str, default='classifier')
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -36,6 +37,7 @@ EMB_DIM = opts.emb_dim
 EPOCH = opts.epoch
 EMB_PKL = 'embedding_' + str(EMB_DIM) + '.pickle'
 
+MODEL_TYPE = opts.model
 MODEL_PATH = 'pth_' + opts.name
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 TRAIN_FLAG = opts.train
@@ -183,7 +185,12 @@ if __name__ == '__main__':
     if DEBUG_FLAG:
         embed()
     if not os.path.exists(MODEL_PATH) or TRAIN_FLAG:
-        model = Classifier(EMB_DIM, init_weight, DEVICE)
+        if MODEL_TYPE == 'classifier':
+            model = Classifier(EMB_DIM, init_weight, DEVICE)
+        if MODEL_TYPE == 'gru':
+            model = GRUBase(EMB_DIM, init_weight, DEVICE)
+        else:
+            raise Exception
         model.to(DEVICE)
         start_train(model)
         torch.save(model, MODEL_PATH)
