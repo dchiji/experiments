@@ -118,16 +118,13 @@ def split_into_batches(data):
 
 # pos_batch, neg_batch: list of size (BATCH_SIZE, length for each questions)
 def one_batch_train(model, pos_batch, neg_batch):
-    max_len = max([len(text) for text in pos_batch + neg_batch])
-
     pos_target = [[1.0]] * len(pos_batch)
     neg_target = [[0.0]] * len(neg_batch)
     target = pos_target + neg_target
     target = torch.FloatTensor(target).to(DEVICE)
 
-    # Padding
     batch = pos_batch + neg_batch
-    batch = [idx_lis + [model.padding_idx] * (max_len - len(idx_lis)) for idx_lis in batch]
+    batch = padding(batch)
     batch = torch.LongTensor(batch).to(DEVICE)
 
     loss = nn.BCELoss()
@@ -194,7 +191,7 @@ def start_train(model):
         data_sub['positive-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
         data_sub['negative-seq'] = data['negative-seq'][0:int(len(data['positive'])*0.1)]
         acc, _ = one_epoch_eval(model, data_sub)
-        print(str(acc / (len(data_test['positive-seq']) + len(data_test['negative-seq']))))
+        print(str(acc / (len(data_sub['positive-seq']) + len(data_sub['negative-seq']))))
 
         print('Test Accuracy: ', end='')
         acc, _ = one_epoch_eval(model, data_test)
