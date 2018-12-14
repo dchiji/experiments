@@ -1,4 +1,9 @@
 
+# TODO
+# - try BERT model
+# - calculate F1-score
+# - evaluation mode
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -32,6 +37,7 @@ parser.add_argument('--save_disc_capacity', type=bool, default=False)
 parser.add_argument('--forced-train', type=bool, default=False)
 parser.add_argument('--debug', type=bool, default=False)
 parser.add_argument('--save_path', type=str, default='')
+parser.add_argument('--load_path', type=str, default='')
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -46,6 +52,7 @@ FORCED_TRAIN_FLAG = opts.forced_train
 DEBUG_FLAG = opts.debug
 SAVE_DISC_CAPACITY_FLAG = opts.save_disc_capacity
 SAVE_PATH = opts.save_path
+LOAD_PATH = opts.load_path
 
 
 if not os.path.exists(EMB_PKL):
@@ -150,7 +157,7 @@ def one_epoch_eval(model, data):
     all_pred = []
     batches = []
     corrects = []
-    seq_lis = [(d, 1) for d in data['positive-all-seq']] + [(d, 0) for d in data['negative-seq']]
+    seq_lis = [(d, 1) for d in data['positive-seq']] + [(d, 0) for d in data['negative-seq']]
     for i in range(int(len(seq_lis) / BATCH_SIZE)):
         sublist = seq_lis[i * BATCH_SIZE: (i+1) * BATCH_SIZE]
         bat = [p[0] for p in sublist]
@@ -173,7 +180,7 @@ def start_train(model):
     data['positive-seq'] = [text_to_idx_seq(text) for _, text in data['positive']]
     data['negative-seq'] = [text_to_idx_seq(text) for _, text in data['negative']]
 
-    data_test['positive-all-seq'] = [text_to_idx_seq(text) for _, text in data_test['positive-all']]
+    data_test['positive-seq'] = [text_to_idx_seq(text) for _, text in data_test['positive']]
     data_test['negative-seq'] = [text_to_idx_seq(text) for _, text in data_test['negative']]
 
     for epoch in range(EPOCH):
@@ -186,14 +193,14 @@ def start_train(model):
         data_sub = {}
         data_sub['positive'] = data['positive'][0:int(len(data['positive'])*0.1)]
         data_sub['negative'] = data['negative'][0:int(len(data['positive'])*0.1)]
-        data_sub['positive-all-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
+        data_sub['positive-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
         data_sub['negative-seq'] = data['negative-seq'][0:int(len(data['positive'])*0.1)]
         acc, _ = one_epoch_eval(model, data_sub)
-        print(str(acc / (len(data_sub['positive-all-seq'] * 2))))
+        print(str(acc / (len(data_test['positive-seq']) + len(data_test['negative-seq']))))
 
         print('Test Accuracy: ', end='')
         acc, _ = one_epoch_eval(model, data_test)
-        print(str(acc / (len(data_test['positive-all-seq']) + len(data_test['negative-seq']))))
+        print(str(acc / (len(data_test['positive-seq']) + len(data_test['negative-seq']))))
 
         if SAVE_PATH != '':
             torch.save(model, SAVE_PATH + '/' + MODEL_NAME + '_epoch_' + str(epoch) + '.pth')
@@ -201,7 +208,7 @@ def start_train(model):
 if __name__ == '__main__':
     if DEBUG_FLAG:
         embed()
-    if not os.path.exists(MODEL_PATH) or FORCED_TRAIN_FLAG:
+    if LOAD_PATH == '' or not os.path.exists(LOAD_PATH) or FORCED_TRAIN_FLAG:
         if MODEL_TYPE == 'classifier':
             model = Classifier(EMB_DIM, init_weight, DEVICE)
         elif MODEL_TYPE == 'gru':
@@ -211,6 +218,6 @@ if __name__ == '__main__':
         model.to(DEVICE)
         start_train(model)
     else:
-        model = torch.load(MODEL_PATH)
+        model = torch.load(LOAD_PATH)
         model.to(DEVICE)
         model.eval()

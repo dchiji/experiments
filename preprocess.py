@@ -55,7 +55,6 @@ def make_pickle(rate=0.9):
                 neg.append([qid, text])
 
     total_size = min(len(pos), len(neg))
-    pos_all = pos
     pos = pos[0:total_size]
     neg = neg[0:total_size]
 
@@ -68,7 +67,7 @@ def make_pickle(rate=0.9):
         dic = {'positive': pos_train, 'negative': neg_train}
         pickle.dump(dic, f)
     with open('data_test.pickle', 'wb') as f:
-        dic = {'positive': pos_test, 'negative': neg_test, 'positive-all': pos_all}
+        dic = {'positive': pos_test, 'negative': neg_test}
         pickle.dump(dic, f)
 
 if __name__ == '__main__':
