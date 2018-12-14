@@ -156,7 +156,7 @@ def one_epoch_eval(model, data):
         batches.append(bat)
         corrects.append(cor)
 
-    for i in range(batches):
+    for i in range(len(batches)):
         pred = one_batch_predict(model, batches[0])
         all_pred += pred
         total_acc += sum([1 if pred[j] == corrects[i][j] else 0 for j in range(len(pred))])
