@@ -166,7 +166,7 @@ def one_epoch_eval(model, data):
         corrects.append(cor)
 
     for i in range(len(batches)):
-        pred = one_batch_predict(model, batches[0])
+        pred = one_batch_predict(model, batches[i])
         all_pred += pred
         total_acc += sum([1 if pred[j] == corrects[i][j] else 0 for j in range(len(pred))])
     return total_acc, all_pred
@@ -191,8 +191,6 @@ def start_train(model):
 
         print('Train Accuracy: ', end='')
         data_sub = {}
-        data_sub['positive'] = data['positive'][0:int(len(data['positive'])*0.1)]
-        data_sub['negative'] = data['negative'][0:int(len(data['positive'])*0.1)]
         data_sub['positive-seq'] = data['positive-seq'][0:int(len(data['positive'])*0.1)]
         data_sub['negative-seq'] = data['negative-seq'][0:int(len(data['positive'])*0.1)]
         acc, _ = one_epoch_eval(model, data_sub)
