@@ -31,6 +31,7 @@ parser.add_argument('--model', type=str, default='classifier')
 parser.add_argument('--save_disc_capacity', type=bool, default=False)
 parser.add_argument('--forced-train', type=bool, default=False)
 parser.add_argument('--debug', type=bool, default=False)
+parser.add_argument('--save_path', type=str, default='')
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -39,11 +40,12 @@ EPOCH = opts.epoch
 EMB_PKL = 'embedding_' + str(EMB_DIM) + '.pickle'
 
 MODEL_TYPE = opts.model
-MODEL_PATH = 'pth_' + opts.name
+MODEL_NAME = opts.name
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 FORCED_TRAIN_FLAG = opts.forced_train
 DEBUG_FLAG = opts.debug
 SAVE_DISC_CAPACITY_FLAG = opts.save_disc_capacity
+SAVE_PATH = opts.save_path
 
 
 if not os.path.exists(EMB_PKL):
@@ -193,6 +195,9 @@ def start_train(model):
         acc, _ = one_epoch_eval(model, data_test)
         print(str(acc / (len(data_test['positive-all-seq']) + len(data_test['negative-seq']))))
 
+        if SAVE_PATH != '':
+            torch.save(model, SAVE_PATH + '/' + MODEL_NAME + '_epoch_' + str(epoch) + '.pth')
+
 if __name__ == '__main__':
     if DEBUG_FLAG:
         embed()
@@ -205,7 +210,6 @@ if __name__ == '__main__':
             raise Exception
         model.to(DEVICE)
         start_train(model)
-        torch.save(model, MODEL_PATH)
     else:
         model = torch.load(MODEL_PATH)
         model.to(DEVICE)
