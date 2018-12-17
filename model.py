@@ -78,6 +78,7 @@ class GRUBase(nn.Module):
         weight = weight.view([batch_size, seq_len])
         weight = self.softmax(weight)
         out = torch.einsum('bij,bi->bj', out, weight)
+        out = self.relu(out)
         out = self.W1(out)
         out = self.sigmoid(out)
         return out
