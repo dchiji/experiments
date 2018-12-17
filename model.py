@@ -53,6 +53,7 @@ class GRUBase(nn.Module):
 
         self.hidden_dim = 32
 
+        self.h_0 = torch.rand(4, 1, self.hidden_dim, requires_grad=True).to(self.device)
         self.dropout = nn.Dropout(p=0.2)
         self.gru = nn.GRU(emb_dim, self.hidden_dim, 2, batch_first=True, bidirectional=True)
         self.M = nn.Linear(self.hidden_dim * 2, 1)
@@ -70,7 +71,7 @@ class GRUBase(nn.Module):
         input = self.emb(question)
         input = self.dropout(input)
 
-        h_0 = torch.zeros([4, batch_size, self.hidden_dim]).to(self.device)
+        h_0 = torch.cat([self.h_0] * batch_size, dim=1) # (4, batch_size, hidden_dim)
         out, _ = self.gru(input, h_0)   # (batch_size, seq_len, 2 * hidden_dim)
         out = out.contiguous().view([batch_size, seq_len, 2 * self.hidden_dim])
         weight = self.M(out)    # (batch_size * seq_len, 1)
