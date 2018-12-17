@@ -25,6 +25,9 @@ with open('data_train.pickle', 'rb') as f:
 with open('data_test.pickle', 'rb') as f:
     data_test = pickle.load(f)
 
+with open('data_submission.pickle', 'rb') as f:
+    data_submission = pickle.load(f)
+
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -200,6 +203,26 @@ def start_train(model):
         if SAVE_PATH != '':
             torch.save(model, SAVE_PATH + '/' + MODEL_NAME + '_epoch_' + str(epoch) + '.pth')
 
+def make_submission_csv(model):
+    print('Make submission.csv ...')
+    out = []
+    out.append('qid,prediction\n')
+
+    data_submission['positive-seq'] = [text_to_idx_seq(text) for _, text in data_submission['positive']]
+    data_submission['negative-seq'] = [text_to_idx_seq(text) for _, text in data_submission['negative']]
+    _, pred = one_epoch_eval(model, data_submission)
+
+    insincere_num = 0
+    sincere_num = 0
+
+    for [qid, text], p in zip(data_submission['positive'], pred):
+        out.append('%s,%d\n' % (qid, 1 - p))
+        insincere_num += 1 - p
+        sincere_num += p
+    with open('submission.csv', 'w') as f:
+        f.writelines(out)
+    print('SincereQ: %d \t InsincereQ: %d' % (sincere_num, insincere_num))
+
 if __name__ == '__main__':
     if DEBUG_FLAG:
         embed()
@@ -216,3 +239,4 @@ if __name__ == '__main__':
         model = torch.load(LOAD_PATH)
         model.to(DEVICE)
         model.eval()
+    make_submission_csv(model)

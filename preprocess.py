@@ -3,6 +3,7 @@ from IPython import embed
 import pickle
 import csv
 import re
+import os
 
 pat1 = re.compile('([\\/\\(\\)\\,\\.\\?])[\\/\\(\\)\\,\\.\\?]*')   # (hoge,,fu/ba) => ( hoge , fu / ba )
 pat2 = re.compile('(it|he|she)\'s ')    # it's hoge => it is hoge
@@ -37,7 +38,12 @@ def smoothing(text):
     return text
 
 raw_csv = 'train.csv'
-def make_pickle(rate=0.9):
+
+def make_train_pickle(rate=0.9):
+    if not os.path.exists(raw_csv):
+        print('Not exist: ' + raw_csv)
+        raise Exception
+
     pos = []
     neg = []
 
@@ -70,5 +76,28 @@ def make_pickle(rate=0.9):
         dic = {'positive': pos_test, 'negative': neg_test}
         pickle.dump(dic, f)
 
+test_csv = 'test.csv'
+
+def make_submission_pickle():
+    if not os.path.exists(test_csv):
+        print('Not exist: ' + raw_csv)
+        raise Exception
+    lis = []
+    with open(test_csv, 'r') as f:
+        split_lines = csv.reader(f, delimiter=',')
+        next(split_lines)
+
+        for l in split_lines:
+            qid, text = l
+            text = smoothing(text)
+            lis.append([qid, text])
+
+    with open('data_submission.pickle', 'wb') as f:
+        dic = {}
+        dic['positive'] = lis
+        dic['negative'] = []
+        pickle.dump(dic, f)
+
 if __name__ == '__main__':
-    make_pickle()
+    make_train_pickle()
+    make_submission_pickle()
