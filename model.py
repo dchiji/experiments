@@ -51,7 +51,7 @@ class GRUBase(nn.Module):
         self.emb = nn.Embedding(self.vocab_size, self.emb_dim)
         self.emb.weight = nn.Parameter(init_weight)
 
-        self.hidden_dim = 64
+        self.hidden_dim = 90
 
         self.h_0 = torch.rand(4, 1, self.hidden_dim, requires_grad=True).to(self.device)
         self.dropout = nn.Dropout(p=0.2)
