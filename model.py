@@ -37,7 +37,7 @@ class Classifier(nn.Module):
         self.opt = opt
 
 class GRUBase(nn.Module):
-    def __init__(self, emb_dim, init_weight, device):
+    def __init__(self, emb_dim, init_weight, device, hidden_dim):
         #
         # init_weight: (vocab_size, emb_dim)-tensor
         #
@@ -51,7 +51,7 @@ class GRUBase(nn.Module):
         self.emb = nn.Embedding(self.vocab_size, self.emb_dim)
         self.emb.weight = nn.Parameter(init_weight)
 
-        self.hidden_dim = 90
+        self.hidden_dim = hidden_dim
 
         self.h_0 = torch.rand(4, 1, self.hidden_dim, requires_grad=True).to(self.device)
         self.dropout = nn.Dropout(p=0.2)

@@ -36,6 +36,7 @@ parser.add_argument('--emb_dim', type=int, default=100)
 parser.add_argument('--epoch', type=int, default=30)
 parser.add_argument('--name', type=str, default='default')
 parser.add_argument('--model', type=str, default='classifier')
+parser.add_argument('--gru_hidden', type=int, default=90)
 parser.add_argument('--save_disc_capacity', type=bool, default=False)
 parser.add_argument('--forced-train', type=bool, default=False)
 parser.add_argument('--debug', type=bool, default=False)
@@ -56,6 +57,7 @@ DEBUG_FLAG = opts.debug
 SAVE_DISC_CAPACITY_FLAG = opts.save_disc_capacity
 SAVE_PATH = opts.save_path
 LOAD_PATH = opts.load_path
+GRU_HIDDEN_DIM = opts.gru_hidden
 
 
 if not os.path.exists(EMB_PKL):
@@ -230,7 +232,7 @@ if __name__ == '__main__':
         if MODEL_TYPE == 'classifier':
             model = Classifier(EMB_DIM, init_weight, DEVICE)
         elif MODEL_TYPE == 'gru':
-            model = GRUBase(EMB_DIM, init_weight, DEVICE)
+            model = GRUBase(EMB_DIM, init_weight, DEVICE, GRU_HIDDEN_DIM)
         else:
             raise Exception
         model.to(DEVICE)
