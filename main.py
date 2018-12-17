@@ -42,6 +42,7 @@ parser.add_argument('--forced-train', type=bool, default=False)
 parser.add_argument('--debug', type=bool, default=False)
 parser.add_argument('--save_path', type=str, default='')
 parser.add_argument('--load_path', type=str, default='')
+parser.add_argument('--threshold', type=float, default=0.5)
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -58,6 +59,7 @@ SAVE_DISC_CAPACITY_FLAG = opts.save_disc_capacity
 SAVE_PATH = opts.save_path
 LOAD_PATH = opts.load_path
 GRU_HIDDEN_DIM = opts.gru_hidden
+THRESHOLD = opts.threshold
 
 
 if not os.path.exists(EMB_PKL):
@@ -152,7 +154,7 @@ def one_batch_predict(model, batch):
     batch = padding(batch)
     batch = torch.LongTensor(batch).to(DEVICE)
     pred = model(batch) # (batch_size, 1)
-    return [1 if pred[i][0].item() > 0.5 else 0 for i in range(len(batch))]
+    return [1 if pred[i][0].item() > THRESHOLD else 0 for i in range(len(batch))]
 
 def one_epoch_eval(model, data):
     total_acc = 0
