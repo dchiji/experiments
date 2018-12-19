@@ -1,8 +1,8 @@
 
 # TODO
-# - try BERT model
-# - calculate F1-score
-# - evaluation mode
+#   - Grid search for hyperparams
+#   - Cross validation (because # of validation set < 1000)
+#   - Ensembled model
 
 import torch
 import torch.nn as nn
@@ -43,6 +43,7 @@ parser.add_argument('--debug', type=bool, default=False)
 parser.add_argument('--save_path', type=str, default='')
 parser.add_argument('--load_path', type=str, default='')
 parser.add_argument('--threshold', type=float, default=0.5)
+parser.add_argument('--weight_decay', type=float, default=0.0)
 opts = parser.parse_args()
 
 BATCH_SIZE = opts.batch
@@ -60,6 +61,7 @@ SAVE_PATH = opts.save_path
 LOAD_PATH = opts.load_path
 GRU_HIDDEN_DIM = opts.gru_hidden
 THRESHOLD = opts.threshold
+WEIGHT_DECAY = opts.weight_decay
 
 
 if not os.path.exists(EMB_PKL):
@@ -178,7 +180,7 @@ def one_epoch_eval(model, data):
 def start_train(model):
     print('Start Training ...')
 
-    opt = optim.Adam(model.parameters(), lr=0.001)
+    opt = optim.Adam(model.parameters(), lr=0.001, weight_decay=WEIGHT_DECAY)
     model.set_optimizer(opt)
 
     data['positive-seq'] = [text_to_idx_seq(text) for _, text in data['positive']]
