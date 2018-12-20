@@ -133,7 +133,7 @@ def split_into_batches(data):
 
 def one_epoch_train(model, data):
     total_loss = 0
-    batches = model.split_into_batches(data)
+    batches = split_into_batches(data)
     for bat in batches:
         total_loss += one_batch_train(model, bat[0], bat[1])
     return total_loss
