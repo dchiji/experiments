@@ -1,6 +1,6 @@
 
 # TODO
-#   - Grid search for hyperparams
+#   - Grid search for hyperparams with matplotlib
 #   - Cross validation (because # of validation set < 1000)
 #   - Ensembled model
 
@@ -90,23 +90,29 @@ else:
         idx2word = dic['idx2word']
         word2idx = dic['word2idx']
         init_weight = dic['init_weight']
+
 init_weight = init_weight.to(DEVICE)
 
 
-def text_to_idx_seq(text):
-    seq = []
-    words = text.split(' ')
-    for word in words:
-        if word in word2idx:
-            seq.append(word2idx[word])
-        else:
-            seq.append(word2idx['<unknown>'])
-    return seq
+# pos_batch, neg_batch: list of size (BATCH_SIZE, length for each questions)
+def one_batch_train(model, pos_batch, neg_batch):
+    pos_target = [[1.0]] * len(pos_batch)
+    neg_target = [[0.0]] * len(neg_batch)
+    target = pos_target + neg_target
+    target = torch.FloatTensor(target).to(DEVICE)
 
-def padding(seq_lis):
-    max_len = max([len(seq) for seq in seq_lis])
-    seq_lis = [seq + [word2idx['<padding>']] * (max_len - len(seq)) for seq in seq_lis]
-    return seq_lis
+    batch = pos_batch + neg_batch
+    batch = model.padding(batch)
+    batch = torch.LongTensor(batch).to(DEVICE)
+
+    loss = nn.BCELoss()
+    model.opt.zero_grad()
+    pred = model(batch) # (batch_size, 1)
+    out = loss(pred, target)
+    out.backward()
+    model.opt.step()
+
+    return out.item()
 
 def split_into_batches(data):
     one_epoch = int(len(data['positive-seq']) / BATCH_SIZE)
@@ -125,35 +131,15 @@ def split_into_batches(data):
         batches.append([pos_batch, neg_batch])
     return batches
 
-# pos_batch, neg_batch: list of size (BATCH_SIZE, length for each questions)
-def one_batch_train(model, pos_batch, neg_batch):
-    pos_target = [[1.0]] * len(pos_batch)
-    neg_target = [[0.0]] * len(neg_batch)
-    target = pos_target + neg_target
-    target = torch.FloatTensor(target).to(DEVICE)
-
-    batch = pos_batch + neg_batch
-    batch = padding(batch)
-    batch = torch.LongTensor(batch).to(DEVICE)
-
-    loss = nn.BCELoss()
-    model.opt.zero_grad()
-    pred = model(batch) # (batch_size, 1)
-    out = loss(pred, target)
-    out.backward()
-    model.opt.step()
-
-    return out.item()
-
 def one_epoch_train(model, data):
     total_loss = 0
-    batches = split_into_batches(data)
+    batches = model.split_into_batches(data)
     for bat in batches:
         total_loss += one_batch_train(model, bat[0], bat[1])
     return total_loss
 
 def one_batch_predict(model, batch):
-    batch = padding(batch)
+    batch = model.padding(batch)
     batch = torch.LongTensor(batch).to(DEVICE)
     pred = model(batch) # (batch_size, 1)
     return [1 if pred[i][0].item() > THRESHOLD else 0 for i in range(len(batch))]
@@ -183,11 +169,11 @@ def start_train(model):
     opt = optim.Adam(model.parameters(), lr=0.001, weight_decay=WEIGHT_DECAY)
     model.set_optimizer(opt)
 
-    data['positive-seq'] = [text_to_idx_seq(text) for _, text in data['positive']]
-    data['negative-seq'] = [text_to_idx_seq(text) for _, text in data['negative']]
+    data['positive-seq'] = [model.text_to_idx_seq(text) for _, text in data['positive']]
+    data['negative-seq'] = [model.text_to_idx_seq(text) for _, text in data['negative']]
 
-    data_test['positive-seq'] = [text_to_idx_seq(text) for _, text in data_test['positive']]
-    data_test['negative-seq'] = [text_to_idx_seq(text) for _, text in data_test['negative']]
+    data_test['positive-seq'] = [model.text_to_idx_seq(text) for _, text in data_test['positive']]
+    data_test['negative-seq'] = [model.text_to_idx_seq(text) for _, text in data_test['negative']]
 
     for epoch in range(EPOCH):
         print('[Epoch ' + str(epoch) + ']')
@@ -214,8 +200,8 @@ def make_submission_csv(model):
     out = []
     out.append('qid,prediction\n')
 
-    data_submission['positive-seq'] = [text_to_idx_seq(text) for _, text in data_submission['positive']]
-    data_submission['negative-seq'] = [text_to_idx_seq(text) for _, text in data_submission['negative']]
+    data_submission['positive-seq'] = [model.text_to_idx_seq(text) for _, text in data_submission['positive']]
+    data_submission['negative-seq'] = [model.text_to_idx_seq(text) for _, text in data_submission['negative']]
     _, pred = one_epoch_eval(model, data_submission)
 
     insincere_num = 0
@@ -236,7 +222,7 @@ if __name__ == '__main__':
         if MODEL_TYPE == 'classifier':
             model = Classifier(EMB_DIM, init_weight, DEVICE)
         elif MODEL_TYPE == 'gru':
-            model = GRUBase(EMB_DIM, init_weight, DEVICE, GRU_HIDDEN_DIM)
+            model = GRUBase(EMB_DIM, idx2word, word2idx, init_weight, DEVICE, GRU_HIDDEN_DIM)
         else:
             raise Exception
         model.to(DEVICE)

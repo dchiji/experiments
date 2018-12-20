@@ -37,13 +37,15 @@ class Classifier(nn.Module):
         self.opt = opt
 
 class GRUBase(nn.Module):
-    def __init__(self, emb_dim, init_weight, device, hidden_dim):
+    def __init__(self, emb_dim, idx2word, word2idx, init_weight, device, hidden_dim):
         #
         # init_weight: (vocab_size, emb_dim)-tensor
         #
         super(GRUBase, self).__init__()
 
         self.emb_dim = emb_dim
+        self.idx2word = idx2word
+        self.word2idx = word2idx
         self.vocab_size = init_weight.size()[0]
         self.padding_idx = self.vocab_size - 1
         self.device = device
@@ -85,3 +87,19 @@ class GRUBase(nn.Module):
 
     def set_optimizer(self, opt):
         self.opt = opt
+
+    def text_to_idx_seq(self, text):
+        seq = []
+        words = text.split(' ')
+        for word in words:
+            if word in self.word2idx:
+                seq.append(self.word2idx[word])
+            else:
+                seq.append(self.word2idx['<unknown>'])
+        return seq
+
+    def padding(self, seq_lis):
+        max_len = max([len(seq) for seq in seq_lis])
+        seq_lis = [seq + [self.word2idx['<padding>']] * (max_len - len(seq)) for seq in seq_lis]
+        return seq_lis
+
