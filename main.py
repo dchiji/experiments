@@ -114,7 +114,7 @@ def one_batch_train(model, pos_batch, neg_batch):
 
     return out.item()
 
-def split_into_batches(data):
+def split_into_batches(model, data):
     one_epoch = int(len(data['positive-seq']) / BATCH_SIZE)
     pos_batch_size = int(BATCH_SIZE / 2)
     neg_batch_size = int(BATCH_SIZE / 2)
@@ -124,7 +124,7 @@ def split_into_batches(data):
         pos_batch = data['positive-seq'][i * pos_batch_size:(i+1) * pos_batch_size]
         neg_batch = data['negative-seq'][i * neg_batch_size:(i+1) * neg_batch_size]
 
-        pos_neg_batch = padding(pos_batch + neg_batch)
+        pos_neg_batch = model.padding(pos_batch + neg_batch)
         pos_batch = pos_neg_batch[0:pos_batch_size]
         neg_batch = pos_neg_batch[pos_batch_size:]
 
@@ -133,7 +133,7 @@ def split_into_batches(data):
 
 def one_epoch_train(model, data):
     total_loss = 0
-    batches = split_into_batches(data)
+    batches = split_into_batches(model, data)
     for bat in batches:
         total_loss += one_batch_train(model, bat[0], bat[1])
     return total_loss
